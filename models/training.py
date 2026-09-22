@@ -31,6 +31,7 @@ class Trainer(object):
             os.makedirs(self.checkpoint_path)
         self.writer = SummaryWriter(self.exp_path + 'summary'.format(exp_name))
         self.val_min = None
+        self.val_data_iterator = self.val_dataset.get_loader().__iter__()
 
 
     def train_step(self,batch):
@@ -128,10 +129,10 @@ class Trainer(object):
         num_batches = 15
         for _ in range(num_batches):
             try:
-                val_batch = self.val_data_iterator.next()
+                val_batch = next(self.val_data_iterator)
             except:
                 self.val_data_iterator = self.val_dataset.get_loader().__iter__()
-                val_batch = self.val_data_iterator.next()
+                val_batch = next(self.val_data_iterator)
 
             sum_val_loss += self.compute_loss( val_batch).item()
 

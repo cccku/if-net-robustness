@@ -1,4 +1,5 @@
 import models.local_model as model
+import models.local_model_dropout as model_dropout
 import models.data.voxelized_data_shapenet as voxelized_data
 import numpy as np
 import argparse
@@ -43,6 +44,9 @@ if args.model == 'ShapeNetPoints':
 
 if args.model == 'SVR':
     net = model.SVR()
+
+if args.model == 'ShapeNetPointsDropout':
+    net = model_dropout.ShapeNetPointsDropout()
 
 
 dataset = voxelized_data.VoxelizedDataset(args.mode, voxelized_pointcloud= args.pointcloud , pointcloud_samples= args.pc_samples, res=args.res, sample_distribution=args.sample_distribution,

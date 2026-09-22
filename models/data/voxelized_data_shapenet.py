@@ -12,7 +12,7 @@ import torch
 class VoxelizedDataset(Dataset):
 
 
-    def __init__(self, mode, res = 32,  voxelized_pointcloud = False, pointcloud_samples = 3000, data_path = 'shapenet/data/', split_file = 'shapenet/split.npz',
+    def __init__(self, mode, res = 32,  voxelized_pointcloud = False, pointcloud_samples = 3000, data_path = 'shapenet/data/', split_file = 'shapenet/split_chairs.npz',
                  batch_size = 64, num_sample_points = 1024, num_workers = 12, sample_distribution = [1], sample_sigmas = [0.015], **kwargs):
 
         self.sample_distribution = np.array(sample_distribution)

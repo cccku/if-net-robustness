@@ -1,10 +1,40 @@
-__pycache__
-*.so
-build/
+# Data — too large for GitHub
+shapenet/
+data/
+
+# Experiment checkpoints and generated meshes
+experiments/
+
+# Figures output
+figures/
+
+# Python
+__pycache__/
 *.pyc
-*.c
-/experiments/*
-/shapenet/data/*
-*.cpp
-/trash/
-!.gitkeep
+*.pyo
+*.egg-info/
+.eggs/
+
+# Compiled C extensions
+data_processing/libmesh/*.so
+data_processing/libvoxelize/*.so
+data_processing/libmesh/build/
+data_processing/libvoxelize/build/
+
+# Logs
+logs/
+*.log
+
+# LaTeX build artifacts
+Final\ Report/*.aux
+Final\ Report/*.bbl
+Final\ Report/*.blg
+Final\ Report/*.fdb_latexmk
+Final\ Report/*.fls
+Final\ Report/*.log
+Final\ Report/*.synctex.gz
+Final\ Report/*.pdf
+
+# OS
+.DS_Store
+Thumbs.db

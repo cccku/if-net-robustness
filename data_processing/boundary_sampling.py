@@ -49,5 +49,5 @@ if __name__ == '__main__':
     sample_num = 100000
 
 
-    p = Pool(mp.cpu_count())
-    p.map(boundary_sampling, glob.glob( ROOT + '/*/*/'))
+    p = Pool(8)
+    p.map(boundary_sampling, [p for p in glob.glob( ROOT + '/*/*/') if not any(s in p for s in ['/models/', '/images/'])])

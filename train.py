@@ -1,4 +1,5 @@
 import models.local_model as model
+import models.local_model_dropout as model_dropout
 import models.data.voxelized_data_shapenet as voxelized_data
 from models import training
 import argparse
@@ -19,6 +20,7 @@ parser.add_argument('-std_dev','--sample_sigmas',default=[0.15,0.015], nargs='+'
 parser.add_argument('-batch_size' , default=30, type=int)
 parser.add_argument('-res' , default=32, type=int)
 parser.add_argument('-m','--model' , default='LocNet', type=str)
+parser.add_argument('-dropout_p', default=0.1, type=float)
 parser.add_argument('-o','--optimizer' , default='Adam', type=str)
 
 try:
@@ -39,20 +41,24 @@ if args.model == 'ShapeNetPoints':
 if args.model == 'SVR':
     net = model.SVR()
 
+if args.model == 'ShapeNetPointsDropout':
+    net = model_dropout.ShapeNetPointsDropout(scale_dropout_p=args.dropout_p)
+
 
 
 train_dataset = voxelized_data.VoxelizedDataset('train', voxelized_pointcloud= args.pointcloud, pointcloud_samples= args.pc_samples, res=args.res, sample_distribution=args.sample_distribution,
-                                          sample_sigmas=args.sample_sigmas ,num_sample_points=50000, batch_size=args.batch_size, num_workers=30)
+                                          sample_sigmas=args.sample_sigmas ,num_sample_points=50000, batch_size=args.batch_size, num_workers=8)
 
 val_dataset = voxelized_data.VoxelizedDataset('val', voxelized_pointcloud= args.pointcloud , pointcloud_samples= args.pc_samples, res=args.res, sample_distribution=args.sample_distribution,
-                                          sample_sigmas=args.sample_sigmas ,num_sample_points=50000, batch_size=args.batch_size, num_workers=30)
+                                          sample_sigmas=args.sample_sigmas ,num_sample_points=50000, batch_size=args.batch_size, num_workers=8)
 
 
 
-exp_name = 'i{}_dist-{}sigmas-{}v{}_m{}'.format(  'PC' + str(args.pc_samples) if args.pointcloud else 'Voxels',
+exp_name = 'i{}_dist-{}sigmas-{}v{}_m{}{}'.format(  'PC' + str(args.pc_samples) if args.pointcloud else 'Voxels',
                                     ''.join(str(e)+'_' for e in args.sample_distribution),
                                        ''.join(str(e) +'_'for e in args.sample_sigmas),
-                                                                args.res,args.model)
+                                                                args.res,args.model,
+                                                                '_p{}'.format(args.dropout_p) if args.model == 'ShapeNetPointsDropout' else '')
 
 trainer = training.Trainer(net,torch.device("cuda"),train_dataset, val_dataset,exp_name, optimizer=args.optimizer)
-trainer.train_model(1500)
+trainer.train_model(500)

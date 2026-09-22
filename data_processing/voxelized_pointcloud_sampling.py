@@ -59,7 +59,7 @@ if __name__ == '__main__':
     grid_points = iw.create_grid_points_from_bounds(bb_min, bb_max, args.res)
     kdtree = KDTree(grid_points)
 
-    p = Pool(mp.cpu_count())
+    p = Pool(8)
     paths = glob(ROOT + '/*/*/')
 
     # enabeling to run te script multiple times in parallel: shuffling the data
