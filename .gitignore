@@ -38,3 +38,7 @@ Final\ Report/*.pdf
 # OS
 .DS_Store
 Thumbs.db
+
+# PBS job output files
+*.o[0-9]*
+*.e[0-9]*

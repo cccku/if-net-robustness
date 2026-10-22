@@ -104,6 +104,13 @@ class Trainer(object):
             torch.save({'epoch':epoch,'model_state_dict': self.model.state_dict(),
                         'optimizer_state_dict': self.optimizer.state_dict()}, path)
 
+        # Keep only every 10th checkpoint to save disk space
+        import glob as _glob
+        all_ckpts = sorted(_glob.glob(self.checkpoint_path + "checkpoint_epoch_*.tar"))
+        for ckpt in all_ckpts:
+            ep = int(os.path.splitext(os.path.basename(ckpt))[0][17:])
+            if ep % 10 != 0 and ep != epoch:
+                os.remove(ckpt)
     def load_checkpoint(self):
         checkpoints = glob(self.checkpoint_path+'/*')
         if len(checkpoints) == 0:

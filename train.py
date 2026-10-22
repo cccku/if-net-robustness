@@ -61,4 +61,4 @@ exp_name = 'i{}_dist-{}sigmas-{}v{}_m{}{}'.format(  'PC' + str(args.pc_samples) 
                                                                 '_p{}'.format(args.dropout_p) if args.model == 'ShapeNetPointsDropout' else '')
 
 trainer = training.Trainer(net,torch.device("cuda"),train_dataset, val_dataset,exp_name, optimizer=args.optimizer)
-trainer.train_model(500)
+trainer.train_model(1500)

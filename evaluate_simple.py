@@ -9,14 +9,14 @@ from scipy.spatial import cKDTree
 import models.local_model as model
 import models.local_model_dropout as model_dropout
 
-def get_grid_points(res=32):
+def get_grid_points(res=128):
     bb_min, bb_max = -0.5, 0.5
     points = np.mgrid[:res, :res, :res].T.reshape(-1, 3).astype(np.float32)
     points = bb_min + (bb_max - bb_min) * points / (res - 1)
     return points
 
 def evaluate_model(net, split_file, data_path, num_points, use_fps,
-                   res=32, num_samples=200, device='cuda'):
+                   res=128, num_samples=200, device='cuda'):
     net.eval()
     split = np.load(split_file)
     test_models = [s.lstrip('/') for s in split['test'] if '03001627' in s]
@@ -37,7 +37,7 @@ def evaluate_model(net, split_file, data_path, num_points, use_fps,
                         'fps_point_cloud_{}points.npz'.format(num_points))
                 else:
                     pc_file = os.path.join(path,
-                        'voxelized_point_cloud_32res_{}points.npz'.format(num_points))
+                        'voxelized_point_cloud_128res_{}points.npz'.format(num_points))
 
                 if not os.path.exists(pc_file):
                     continue
@@ -59,42 +59,62 @@ def evaluate_model(net, split_file, data_path, num_points, use_fps,
                 query = 2 * query
                 p = torch.FloatTensor(query).unsqueeze(0).to(device)
 
-                # Forward pass
-                logits = net(p, inputs)
-                pred_occ = (logits.squeeze(0).cpu().numpy() > 0)
+                # Forward pass (chunked to avoid OOM at 128^3)
+                chunk_size = 10000
+                logits_list = []
+                for i in range(0, p.shape[1], chunk_size):
+                    p_chunk = p[:, i:i+chunk_size, :]
+                    logits_chunk = net(p_chunk, inputs)
+                    logits_list.append(logits_chunk.squeeze(0).cpu())
+                logits = torch.cat(logits_list, dim=0)
+                pred_occ = (logits.numpy() > 0)
 
                 # Load GT occupancy from boundary samples
                 gt_file = os.path.join(path, 'boundary_0.15_samples.npz')
                 if not os.path.exists(gt_file):
                     continue
 
-                # Use voxelized GT occupancy
-                gt_vox_file = os.path.join(path,
-                    'voxelized_point_cloud_32res_3000points.npz')
-                if not os.path.exists(gt_vox_file):
+                # Use boundary samples as GT (proper surface GT)
+                gt_file = os.path.join(path, 'boundary_0.15_samples.npz')
+                if not os.path.exists(gt_file):
                     continue
-                gt_data = np.load(gt_vox_file)
-                gt_occ = np.unpackbits(
-                    gt_data['compressed_occupancies'])[:res**3].astype(bool)
+                gt_data = np.load(gt_file)
+                gt_points = gt_data['grid_coords'].astype(np.float32)
+                gt_occ_labels = gt_data['occupancies'].astype(bool)
 
-                # IoU
-                intersection = np.sum(pred_occ & gt_occ)
-                union = np.sum(pred_occ | gt_occ)
+                # Run model on GT boundary points to get pred occupancy at those points
+                p_gt = torch.FloatTensor(gt_points).unsqueeze(0).to(device)
+                p_gt_eval = p_gt.clone()
+                p_gt_eval[:,:,0], p_gt_eval[:,:,2] = p_gt[:,:,2].clone(), p_gt[:,:,0].clone()
+                p_gt_eval = 2 * p_gt_eval
+                chunk_size = 10000
+                logits_gt_list = []
+                for i in range(0, p_gt_eval.shape[1], chunk_size):
+                    p_chunk = p_gt_eval[:, i:i+chunk_size, :]
+                    logits_chunk = net(p_chunk, inputs)
+                    logits_gt_list.append(logits_chunk.squeeze(0).cpu())
+                logits_gt = torch.cat(logits_gt_list, dim=0)
+                pred_occ_gt = (logits_gt.numpy() > 0)
+
+                # IoU on boundary samples
+                intersection = np.sum(pred_occ_gt & gt_occ_labels)
+                union = np.sum(pred_occ_gt | gt_occ_labels)
                 if union > 0:
                     iou_scores.append(intersection / union)
 
-                # Chamfer: pred surface vs GT point cloud
+                # Chamfer: pred surface points vs GT surface points
                 pred_pts = grid_points[pred_occ]
-                gt_pts = grid_points[gt_occ]
-                if len(pred_pts) > 0 and len(gt_pts) > 0:
+                gt_surf = gt_points[gt_occ_labels]
+                if len(pred_pts) > 0 and len(gt_surf) > 0:
                     t1 = cKDTree(pred_pts)
-                    t2 = cKDTree(gt_pts)
-                    d1, _ = t1.query(gt_pts[:1000])
+                    t2 = cKDTree(gt_surf)
+                    d1, _ = t1.query(gt_surf[:1000])
                     d2, _ = t2.query(pred_pts[:1000])
                     cd = (np.mean(d1**2) + np.mean(d2**2)) / 2
                     chamfer_scores.append(cd)
 
             except Exception as e:
+                import traceback; traceback.print_exc()
                 continue
 
     return {
@@ -128,7 +148,7 @@ if __name__ == '__main__':
     results = evaluate_model(
         net=net,
         split_file='shapenet/split_chairs.npz',
-        data_path='shapenet/data/',
+        data_path='/scratch/users/ntu/yuanlun0/shapenet_data/ShapeNetCore.v1/ShapeNetCore.v1/',
         num_points=args.num_points,
         use_fps=args.use_fps,
         num_samples=args.num_samples,

@@ -35,6 +35,6 @@ if __name__ == '__main__':
     paths = glob.glob(INPUT_PATH + '/*/*')
     paths = [p for p in paths if os.path.isdir(p)]
     print('Found {} models'.format(len(paths)))
-    p = Pool(mp.cpu_count())
+    p = Pool(32)
     p.map(convert_and_scale, paths)
     print('Done.')
