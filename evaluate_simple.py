@@ -83,10 +83,8 @@ def evaluate_model(net, split_file, data_path, num_points, use_fps,
                 gt_occ_labels = gt_data['occupancies'].astype(bool)
 
                 # Run model on GT boundary points to get pred occupancy at those points
-                p_gt = torch.FloatTensor(gt_points).unsqueeze(0).to(device)
-                p_gt_eval = p_gt.clone()
-                p_gt_eval[:,:,0], p_gt_eval[:,:,2] = p_gt[:,:,2].clone(), p_gt[:,:,0].clone()
-                p_gt_eval = 2 * p_gt_eval
+                # boundary_0.15 grid_coords are already in model input space [-2,2] with x/z swap applied
+                p_gt_eval = torch.FloatTensor(gt_points).unsqueeze(0).to(device)
                 chunk_size = 10000
                 logits_gt_list = []
                 for i in range(0, p_gt_eval.shape[1], chunk_size):
@@ -95,6 +93,12 @@ def evaluate_model(net, split_file, data_path, num_points, use_fps,
                     logits_gt_list.append(logits_chunk.squeeze(0).cpu())
                 logits_gt = torch.cat(logits_gt_list, dim=0)
                 pred_occ_gt = (logits_gt.numpy() > 0)
+
+                # Debug first shape
+                if len(iou_scores) == 0:
+                    print(f"DEBUG pred_occ_gt fraction: {pred_occ_gt.mean():.4f} ({pred_occ_gt.sum()} of {len(pred_occ_gt)})")
+                    print(f"DEBUG gt_occ_labels fraction: {gt_occ_labels.mean():.4f} ({gt_occ_labels.sum()} of {len(gt_occ_labels)})")
+                    print(f"DEBUG logits_gt range: {logits_gt.numpy().min():.4f} to {logits_gt.numpy().max():.4f}")
 
                 # IoU on boundary samples
                 intersection = np.sum(pred_occ_gt & gt_occ_labels)
