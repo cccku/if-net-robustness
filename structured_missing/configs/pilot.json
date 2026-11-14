@@ -1,0 +1,24 @@
+{
+  "experiment": "shapenet_chair_structured_missing_pilot",
+  "seed": 20261023,
+  "synthetic": false,
+  "manifest": "data/test_manifest.json",
+  "output": "results/pilot",
+  "input_resolution": 128,
+  "query_resolution": 128,
+  "chunk_size": 2048,
+  "dense_points": 20000,
+  "surface_points": 10000,
+  "point_counts": [300, 1000],
+  "conditions": ["full", "x_positive", "x_negative"],
+  "ablations": {"all": []},
+  "threshold": 0.5,
+  "fscore_threshold": 0.01,
+  "device": "auto",
+  "cpu_threads": 4,
+  "models": [
+    {"name": "baseline", "checkpoint": "checkpoints/baseline/checkpoint_epoch_1450.tar", "expected_epoch": 1450},
+    {"name": "dropout_p01", "checkpoint": "checkpoints/scale_dropout_p01/checkpoint_epoch_1499.tar", "expected_epoch": 1499}
+  ]
+}
+
