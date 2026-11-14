@@ -6,6 +6,10 @@
 
 ---
 
+## Structured-missing evaluation extension
+
+The added [structured_missing/](structured_missing/) directory contains the fixed-checkpoint spatial-coverage experiment: matched full/half-space observations, surface reconstruction metrics, extraction-failure records, paired bootstrap statistics, and decoder-feature masking. It contains experiment code and configurations; data and checkpoints are supplied separately.
+
 ## Overview
 
 This repository extends [IF-Net](https://github.com/jchibane/if-net) with a systematic robustness study under controlled point cloud degradation, and proposes **scale dropout** — a lightweight training-time regularisation strategy that improves reconstruction quality under severe input sparsity.
